@@ -15,8 +15,13 @@ from utils import *
 Global Parameters
 '''
 n_epochs   = 20000
-batch_size = 64 
-
+batch_size = 100
+g_lr       = 0.0025
+d_lr       = 0.00001
+beta       = 0.5
+alpha_1    = 5
+alpha_2    = 0.0001
+d_thresh   = 0.8    
 
 def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
  
