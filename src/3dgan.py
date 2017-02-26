@@ -23,6 +23,10 @@ alpha_d    = 5
 alpha_g    = 0.0001
 d_thresh   = 0.8 
 strides    = [1,2,2,2,1]
+weights = {}
+biases  = {}
+z_size = 100
+#size of initial noise vector that will be used for generator
 
 def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
  
@@ -71,13 +75,44 @@ def discriminator(inputs, batch_size=batch_size, is_train=True, reuse=False):
     shape = d_4.get_shape().as_list()
     dim = numpy.prod(shape[1:])
     d_5 = tf.reshape(d_4, shape=[-1, dim])
-    d_5 = tf.add(tf.matmul(z, weights['wg1']), biases['bd5'])
+    d_5 = tf.add(tf.matmul(d_5, weights['wd5']), biases['bd5'])
     
     return d_5
 
+def initialiseWeights():
+    # weights is a dictionary. It is a global variable 
+    global weights
+
+    # filter_shape = [5, 5, 5, in_filters, out_filters]
+    weights['wg1'] = tf.get_variable("W", shape=[5, 5, 5, z_size, 512], initializer=tf.contrib.layers.xavier_initializer())
+    weights['wg2'] = tf.get_variable("W", shape=[5, 5, 5, 512, 256], initializer=tf.contrib.layers.xavier_initializer())
+    weights['wg3'] = tf.get_variable("W", shape=[5, 5, 5, 256, 128], initializer=tf.contrib.layers.xavier_initializer())
+    weights['wg4'] = tf.get_variable("W", shape=[5, 5, 5, 128, 1  ], initializer=tf.contrib.layers.xavier_initializer())
+
+    weights['wd1'] = tf.get_variable("W", shape=[5, 5, 5, 1 , 32], initializer=tf.contrib.layers.xavier_initializer())
+    weights['wd2'] = tf.get_variable("W", shape=[5, 5, 5, 32, 32], initializer=tf.contrib.layers.xavier_initializer())
+    weights['wd3'] = tf.get_variable("W", shape=[5, 5, 5, 32, 32], initializer=tf.contrib.layers.xavier_initializer())
+    weights['wd4'] = tf.get_variable("W", shape=[5, 5, 5, 32, 32], initializer=tf.contrib.layers.xavier_initializer())    
+    weights['wd5'] = tf.get_variable("W", shape=[5* 5* 5* 32, 1 ], initializer=tf.contrib.layers.xavier_initializer())    
+
+def initialiseBiases():
+    global biases
+
+    biases['bg1'] = tf.get_variable("B", shape=[512], initializer=tf.contrib.layers.xavier_initializer())
+    biases['bg2'] = tf.get_variable("B", shape=[256], initializer=tf.contrib.layers.xavier_initializer())
+    biases['bg3'] = tf.get_variable("B", shape=[128], initializer=tf.contrib.layers.xavier_initializer())
+    biases['bg4'] = tf.get_variable("B", shape=[ 1 ], initializer=tf.contrib.layers.xavier_initializer())
+
+    biases['bd1'] = tf.get_variable("B", shape=[32], initializer=tf.contrib.layers.xavier_initializer())
+    biases['bd2'] = tf.get_variable("B", shape=[32], initializer=tf.contrib.layers.xavier_initializer())
+    biases['bd3'] = tf.get_variable("B", shape=[32], initializer=tf.contrib.layers.xavier_initializer())
+    biases['bd4'] = tf.get_variable("B", shape=[32], initializer=tf.contrib.layers.xavier_initializer())    
+    biases['bd5'] = tf.get_variable("B", shape=[1 ], initializer=tf.contrib.layers.xavier_initializer()) 
+
+
 def trainGAN():
     # size of initial noise vector that will be used for generator
-    z_size = 100 
+    # z_size = 100 
 
     initializer = tf.truncated_normal_initializer(stddev=0.02)
 
