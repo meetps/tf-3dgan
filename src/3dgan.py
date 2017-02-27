@@ -20,9 +20,9 @@ alpha_d    = 5
 alpha_g    = 0.0001
 d_thresh   = 0.8 
 strides    = [1,2,2,2,1]
-weights = {}
-biases  = {}
-z_size = 100
+weights    = {}
+biases     = {}
+z_size     = 100
 #size of initial noise vector that will be used for generator
 train_sample_directory = './train_sample/'
 model_directory = './models/'
@@ -72,10 +72,8 @@ def discriminator(inputs, phase_train=True, reuse=False):
     d_4 = tf.nn.relu(d_4) 
 
     shape = d_4.get_shape().as_list()
-    print shape
     dim = np.prod(shape[1:])
     d_5 = tf.reshape(d_4, shape=[-1, dim])
-    print d_5.get_shape()
     d_5 = tf.add(tf.matmul(d_5, weights['wd5']), biases['bd5'])
     
     return d_5
