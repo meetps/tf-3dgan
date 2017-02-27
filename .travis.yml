@@ -1,0 +1,11 @@
+language: python
+python:
+  - "2.7"
+install:                                                                                                                                                                                                                            
+  - pip install numpy
+  - pip install tensorflow
+  - pip install os
+  - pip install tqdm
+  - pip install matplotlib
+script:
+  - "python 3dgan.py"
