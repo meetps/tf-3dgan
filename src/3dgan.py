@@ -133,7 +133,7 @@ def trainGAN():
     g_loss = -tf.reduce_mean(tf.log(d_output_z)) # loss for generator
     summary_g_loss = tf.summary.scalar("g_loss", g_loss)
 
-    net_g_test = generator(z_vector, is_train=False, reuse=True)
+    net_g_test = generator(z_vector, phase_train=True, reuse=True)
     # the following parameter indices may change if the network structure changes
     para_g=list(np.array(tf.trainable_variables())[[0,1,4,5,8,9,12,13]])
     para_d=list(np.array(tf.trainable_variables())[[14,15,16,17,20,21,24,25]])#,28,29]])

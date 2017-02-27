@@ -4,7 +4,6 @@ python:
 install:                                                                                                                                                                                                                            
   - pip install numpy
   - pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.0-cp27-none-linux_x86_64.whl
-  - pip install os
   - pip install tqdm
   - pip install matplotlib
 script:
