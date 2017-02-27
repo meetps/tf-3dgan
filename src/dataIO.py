@@ -39,10 +39,10 @@ def binaryPlot(voxels):
     plt.show()
 
 def discretePlot(vertices):
-    figure = pyplot.figure()
+    figure = plt.figure()
     axes = mplot3d.Axes3D(figure)
     axes.scatter(vertices.T[0,:],vertices.T[1,:],vertices.T[2,:])
-    pyplot.show()
+    plt.show()
 
 def getVolume(path, sideLen=32):
     mesh = trimesh.load(path)
