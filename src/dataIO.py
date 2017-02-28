@@ -72,7 +72,7 @@ def getAll(obj='airplane',train=True):
     objPath = DATA_PATH + obj + '/30/'
     objPath += 'train/' if train else 'test/'
     fileList = [f for f in os.listdir(objPath) if f.endswith('.mat')]
-    volumeBatch = np.asarray([getVoxelFromMat(path) for path in fileList],dtype=np.bool)
+    volumeBatch = np.asarray([getVoxelFromMat(objPath + f) for f in fileList],dtype=np.bool)
     return volumeBatch
 
 if __name__ == '__main__':
