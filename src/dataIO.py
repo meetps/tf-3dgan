@@ -15,8 +15,8 @@ except:
     pass
     print 'All dependencies not loaded, some functionality may not work'
 
-
-DATA_PATH = '/home/gpu_users/meetshah/3dgan/volumetric_data/'
+LOCAL_PATH = '/home/meetshah1995/datasets/ModelNet/3DShapeNets/volumetric_data/'
+SERVER_PATH = '/home/gpu_users/meetshah/3dgan/volumetric_data/'
 
 def getVF(path):
     raw_data = tuple(open(path, 'r'))
@@ -68,8 +68,10 @@ def getVoxelFromMat(path):
     voxels = np.pad(voxels,(1,1),'constant',constant_values=(0,0))
     return voxels
 
-def getAll(obj='airplane',train=True):
-    objPath = DATA_PATH + obj + '/30/'
+def getAll(obj='airplane',train=True, is_local=False):
+    objPath = SERVER_PATH + obj + '/30/'
+    if is_local:
+        objPath = LOCAL_PATH + obj + '/30/'
     objPath += 'train/' if train else 'test/'
     fileList = [f for f in os.listdir(objPath) if f.endswith('.mat')]
     volumeBatch = np.asarray([getVoxelFromMat(objPath + f) for f in fileList],dtype=np.bool)
