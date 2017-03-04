@@ -22,8 +22,8 @@ d_thresh   = 0.8
 z_size     = 100
 obj        = 'chair' 
 
-train_sample_directory = './train_sample/'
-model_directory = './models/'
+train_sample_directory = '../exp/exp2/train_sample/'
+model_directory = '../exp/exp2/models/'
 is_local = False
 
 weights, biases = {}, {}
@@ -106,7 +106,7 @@ def initialiseWeights():
 def initialiseBiases():
     
     global biases
-    zero_init = tf.zeros_initializer()
+    zero_init = tf.constant_initializer(value=0, dtype=tf.float32) #tf.zeros_initializer()
 
     biases['bg1'] = tf.get_variable("bg1", shape=[4*4*4*512], initializer=zero_init)
     biases['bg2'] = tf.get_variable("bg2", shape=[256], initializer=zero_init)
@@ -138,7 +138,7 @@ def trainGAN():
     d_output_z = tf.maximum(tf.minimum(d_output_z, 0.99), 0.01)
     summary_d_z_hist = tf.histogram_summary("d_prob_z", d_output_z)
 
-    d_loss = -tf.reduce_mean(tf.log(d_output_x) + tf.log(1-d_output_z))
+    d_loss = -tf.reduce_mean(tf.log(d_output_x) - tf.log(1-d_output_z))
     summary_d_loss = tf.scalar_summary("d_loss", d_loss)
     
     g_loss = -tf.reduce_mean(tf.log(d_output_z))
@@ -146,7 +146,7 @@ def trainGAN():
 
     net_g_test = generator(z_vector, phase_train=True, reuse=True)
     para_g=list(np.array(tf.trainable_variables())[[0,1,4,5,8,9,12,13]])
-    para_d=list(np.array(tf.trainable_variables())[[14,15,16,17,20,21,24,25]])#,28,29]])
+    para_d=list(np.array(tf.trainable_variables())[[14,15,16,17,20,21,24,25,28,29]])
 
     # only update the weights for the discriminator network
     optimizer_op_d = tf.train.AdamOptimizer(learning_rate=alpha_d,beta1=beta).minimize(d_loss,var_list=para_d)
