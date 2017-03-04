@@ -185,13 +185,13 @@ def trainGAN():
             print "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss
 
             # output generated chairs
-            if epoch % 500 == 10:
+            if epoch % 500 == 0:
                 g_chairs = sess.run(net_g_test,feed_dict={z_vector:z_sample})
                 if not os.path.exists(train_sample_directory):
                     os.makedirs(train_sample_directory)
                 g_chairs.dump(train_sample_directory+'/'+str(epoch))
             
-            if epoch % 500 == 10:
+            if epoch % 500 == 0:
                 if not os.path.exists(model_directory):
                     os.makedirs(model_directory)      
                 saver.save(sess, save_path = model_directory + '/' + str(epoch) + '.cptk')

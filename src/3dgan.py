@@ -186,7 +186,7 @@ def trainGAN():
 
             # output generated chairs
             if epoch % 500 == 10:
-                g_chairs = sess.run(net_g_test.outputs,feed_dict={z_vector:z_sample})
+                g_chairs = sess.run(net_g_test,feed_dict={z_vector:z_sample})
                 if not os.path.exists(train_sample_directory):
                     os.makedirs(train_sample_directory)
                 g_chairs.dump(train_sample_directory+'/'+str(epoch))
