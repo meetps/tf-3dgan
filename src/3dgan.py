@@ -16,11 +16,11 @@ batch_size = 64
 g_lr       = 0.0025
 d_lr       = 0.00001
 beta       = 0.5
-alpha_d    = 5
-alpha_g    = 0.0001
+alpha_d    = 0.0015
+alpha_g    = 0.000025
 d_thresh   = 0.8 
 z_size     = 100
-obj        = 'airplane' 
+obj        = 'chair' 
 
 train_sample_directory = './train_sample/'
 model_directory = './models/'
