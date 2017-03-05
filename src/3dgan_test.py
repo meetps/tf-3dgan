@@ -48,7 +48,7 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
     
     g_4 = tf.nn.conv3d_transpose(g_3, weights['wg4'], output_shape=[batch_size,32,32,32,1], strides=strides, padding="SAME")
     g_4 = tf.nn.bias_add(g_4, biases['bg4'])                                   
-    g_4 = tf.nn.sigmoid(g_4)
+    g_4 = tf.nn.tanh(g_4)
     
     return g_4
 
@@ -138,7 +138,7 @@ def trainGAN():
     d_output_z = tf.maximum(tf.minimum(d_output_z, 0.99), 0.01)
     summary_d_z_hist = tf.histogram_summary("d_prob_z", d_output_z)
 
-    d_loss = -tf.reduce_mean(tf.log(d_output_x) - tf.log(1-d_output_z))
+    d_loss = -tf.reduce_mean(tf.log(d_output_x) + tf.log(1-d_output_z))
     summary_d_loss = tf.scalar_summary("d_loss", d_loss)
     
     g_loss = -tf.reduce_mean(tf.log(d_output_z))
