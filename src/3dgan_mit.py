@@ -187,15 +187,17 @@ def trainGAN(is_dummy=False):
 
             summary_d, discriminator_loss = sess.run([d_summary_merge,d_loss],feed_dict={z_vector:z, x_vector:x})
             summary_g, generator_loss = sess.run([summary_g_loss,g_loss],feed_dict={z_vector:z})  
-            
-            if discriminator_loss <= 4.6*0.1: 
-                sess.run([optimizer_op_g],feed_dict={z_vector:z})
-            elif generator_loss <= 4.6*0.1:
+            d_x, d_z = sess.run([d_output_x, d_output_z],feed_dict={z_vector:z, x_vector:x})
+
+            # Compute the discriminator accuracy
+            n_p_x = tf.reduce_sum(tf.cast(d_x > 0.5, tf.float32))
+            n_p_z = tf.reduce_sum(tf.cast(d_z <= 0.5, tf.float32))
+            d_acc = (n_p_x + n_p_z) / float(2 * batch_size)
+
+            if d_acc.eval() < 0.8:
                 sess.run([optimizer_op_d],feed_dict={z_vector:z, x_vector:x})
-            else:
-                sess.run([optimizer_op_d],feed_dict={z_vector:z, x_vector:x})
-                sess.run([optimizer_op_g],feed_dict={z_vector:z})
-                            
+
+            sess.run([optimizer_op_g],feed_dict={z_vector:z})
             print "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss
 
             # output generated chairs
@@ -209,18 +211,6 @@ def trainGAN(is_dummy=False):
                 if not os.path.exists(model_directory):
                     os.makedirs(model_directory)      
                 saver.save(sess, save_path = model_directory + '/' + str(epoch) + '.cptk')
-
-def testGAN():
-    ## TODO
-    pass
-
-def visualize():
-    ## TODO
-    pass
-
-def saveModel():
-    ## TODO
-    pass
 
 if __name__ == '__main__':
     trainGAN(is_dummy=True)

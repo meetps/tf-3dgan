@@ -9,4 +9,4 @@ install:
   - pip install tqdm
   - pip install matplotlib
 script:
-  - "python src/3dgan.py"
+  - "python src/3dgan_mit.py"
