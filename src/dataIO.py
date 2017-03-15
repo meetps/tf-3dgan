@@ -5,6 +5,7 @@ import scipy.ndimage as nd
 import scipy.io as io
 import numpy as np
 import matplotlib.pyplot as plt
+import skimage.measure as sk
 
 from mpl_toolkits import mplot3d
 
@@ -46,6 +47,14 @@ def plotFromVoxels(voxels):
     ax.scatter(x, y, -z, zdir='z', c= 'red')
     plt.show()
 
+def getVFByMarchingCubes(voxels, threshold=0.5):
+    v, f =  sk.marching_cubes(voxels, level=threshold)
+    return v, f
+
+def plotMeshFromVoxels(voxels, threshold=0.5):
+    v,f = getVFByMarchingCubes(voxels, threshold)
+    plotFromVF(v,f)
+
 def plotFromVertices(vertices):
     figure = plt.figure()
     axes = mplot3d.Axes3D(figure)
@@ -63,19 +72,22 @@ def getVolumeFromOFF(path, sideLen=32):
     volume[np.nonzero(volume)] = 1.0
     return volume.astype(np.bool)
 
-def getVoxelFromMat(path):
+def getVoxelFromMat(path, cube_len=64):
     voxels = io.loadmat(path)['instance']
     voxels = np.pad(voxels,(1,1),'constant',constant_values=(0,0))
+    if cube_len != 32 and cube_len == 64:
+        voxels = nd.zoom(voxels, (2,2,2), mode='constant', order=0)
     return voxels
 
-def getAll(obj='airplane',train=True, is_local=False):
+def getAll(obj='airplane',train=True, is_local=False, cube_len=64):
     objPath = SERVER_PATH + obj + '/30/'
     if is_local:
         objPath = LOCAL_PATH + obj + '/30/'
     objPath += 'train/' if train else 'test/'
     fileList = [f for f in os.listdir(objPath) if f.endswith('.mat')]
-    volumeBatch = np.asarray([getVoxelFromMat(objPath + f) for f in fileList],dtype=np.bool)
+    volumeBatch = np.asarray([getVoxelFromMat(objPath + f, cube_len) for f in fileList],dtype=np.bool)
     return volumeBatch
+
 
 if __name__ == '__main__':
     path = sys.argv[1]
