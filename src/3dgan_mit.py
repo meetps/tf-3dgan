@@ -17,8 +17,6 @@ batch_size = 50
 g_lr       = 0.0025
 d_lr       = 0.00001
 beta       = 0.5
-alpha_d    = 0.0015
-alpha_g    = 0.000025
 d_thresh   = 0.8 
 z_size     = 200
 leak_value = 0.2
@@ -167,22 +165,20 @@ def trainGAN(is_dummy=False):
     n_p_z = tf.reduce_sum(tf.cast(d_output_z <= 0.5, tf.int32))
     d_acc = tf.divide(n_p_x + n_p_z, 2 * batch_size)
 
+    # Compute the discriminator and generator loss
     d_loss = -tf.reduce_mean(tf.log(d_output_x) + tf.log(1-d_output_z))
-    summary_d_loss = tf.summary.scalar("d_loss", d_loss)
-    
     g_loss = -tf.reduce_mean(tf.log(d_output_z))
+    
+    summary_d_loss = tf.summary.scalar("d_loss", d_loss)
     summary_g_loss = tf.summary.scalar("g_loss", g_loss)
+    summary_n_p_z = tf.summary.scalar("n_p_z", n_p_z)
+    summary_n_p_x = tf.summary.scalar("n_p_x", n_p_x)
+    summary_d_acc = tf.summary.scalar("d_acc", d_acc)
 
     net_g_test = generator(z_vector, phase_train=False, reuse=True)
 
     para_d = [var for var in tf.trainable_variables() if any(x in var.name for x in ['wg', 'bg', 'gen'])]
     para_g = [var for var in tf.trainable_variables() if any(x in var.name for x in ['wd', 'bd', 'dis'])]
-
-    print [v.name for v in para_d]
-    print [v.name for v in para_g]
-
-    # para_g=list(np.array(tf.trainable_variables())[[0,1,4,5,8,9,12,13]])
-    # para_d=list(np.array(tf.trainable_variables())[[14,15,16,17,20,21,24,25]])#,28,29]])
 
     # only update the weights for the discriminator network
     optimizer_op_d = tf.train.AdamOptimizer(learning_rate=d_lr,beta1=beta).minimize(d_loss,var_list=para_d)
@@ -194,9 +190,10 @@ def trainGAN(is_dummy=False):
     with tf.Session() as sess:  
       
         sess.run(tf.global_variables_initializer())        
-        z_sample = np.random.uniform(-1,1, size=[batch_size, z_size]).astype(np.float32)
+        z_sample = np.random.normal(0, 0.33, size=[batch_size, z_size]).astype(np.float32)
         if is_dummy:
             volumes = np.random.randint(0,2,(batch_size,cube_len,cube_len,cube_len))
+            n_epochs = 1
         else:
             volumes = d.getAll(obj=obj, train=True, is_local=True)
         volumes = volumes[...,np.newaxis].astype(np.float) 
@@ -205,17 +202,23 @@ def trainGAN(is_dummy=False):
             
             idx = np.random.randint(len(volumes), size=batch_size)
             x = volumes[idx]
-            z = np.random.uniform(-1, 1, size=[batch_size, z_size]).astype(np.float32)
-        
+            z = np.random.normal(0, 0.33, size=[batch_size, z_size]).astype(np.float32)
+
             # Update the discriminator and generator
-            d_summary_merge = tf.summary.merge([summary_d_loss, summary_d_x_hist,summary_d_z_hist])
+            d_summary_merge = tf.summary.merge([summary_d_loss,
+                                                summary_d_x_hist, 
+                                                summary_d_z_hist,
+                                                summary_d_loss,
+                                                summary_n_p_x,
+                                                summary_n_p_z,
+                                                summary_d_acc])
 
             summary_d, discriminator_loss = sess.run([d_summary_merge,d_loss],feed_dict={z_vector:z, x_vector:x})
             summary_g, generator_loss = sess.run([summary_g_loss,g_loss],feed_dict={z_vector:z})  
             d_accuracy, n_x, n_z = sess.run([d_acc, n_p_x, n_p_z],feed_dict={z_vector:z, x_vector:x})
             print n_x, n_z
 
-            if d_accuracy < 0.8:
+            if d_accuracy < d_thresh:
                 sess.run([optimizer_op_d],feed_dict={z_vector:z, x_vector:x})
                 print 'Discriminator Training ', "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss, "d_acc: ", d_accuracy
 
