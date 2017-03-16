@@ -11,6 +11,6 @@ install:
   - pip install matplotlib
   - pip install stl
   - pip install trimesh
-  - pip install skimage
+  - pip install scikit-image
 script:
-  - "python src/3dgan_mit.py 0"
+  - "python src/3dgan_mit.py 1"
