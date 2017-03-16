@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import sys
 
 import numpy as np
 import tensorflow as tf
@@ -11,8 +12,8 @@ from utils import *
 '''
 Global Parameters
 '''
-n_epochs   = 10
-batch_size = 100
+n_epochs   = 10000
+batch_size = 50
 g_lr       = 0.0025
 d_lr       = 0.00001
 beta       = 0.5
@@ -34,31 +35,37 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
 
     strides    = [1,2,2,2,1]
 
-    z = tf.reshape(z, (batch_size, 1, 1, 1, z_size))
-    #[100,1,1,1,200] -> [4,4,4,200,512]
-    g_1 = tf.nn.conv3d(z, weights['wg1'], strides=[1,1,1,1,1], padding="SAME")
-    g_1 = tf.nn.bias_add(g_1, biases['bg1'])                                  
-    g_1 = tf.contrib.layers.batch_norm(g_1, is_training=phase_train)
-    g_1 = tf.nn.relu(g_1)
+    with tf.variable_scope("gen"):
+        z = tf.reshape(z, (batch_size, 1, 1, 1, z_size))
+        g_1 = tf.nn.conv3d_transpose(z, weights['wg1'], (batch_size,4,4,4,512), strides=[1,1,1,1,1], padding="VALID")
+        g_1 = tf.nn.bias_add(g_1, biases['bg1'])                                  
+        g_1 = tf.contrib.layers.batch_norm(g_1, is_training=phase_train)
+        g_1 = tf.nn.relu(g_1)
 
-    g_2 = tf.nn.conv3d(g_1, weights['wg2'], strides=strides, padding="SAME")
-    g_2 = tf.nn.bias_add(g_2, biases['bg2'])
-    g_2 = tf.contrib.layers.batch_norm(g_2, is_training=phase_train)
-    g_2 = tf.nn.relu(g_2)
+        g_2 = tf.nn.conv3d_transpose(g_1, weights['wg2'], (batch_size,8,8,8,256), strides=strides, padding="SAME")
+        g_2 = tf.nn.bias_add(g_2, biases['bg2'])
+        g_2 = tf.contrib.layers.batch_norm(g_2, is_training=phase_train)
+        g_2 = tf.nn.relu(g_2)
 
-    g_3 = tf.nn.conv3d(g_2, weights['wg3'], strides=strides, padding="SAME")
-    g_3 = tf.nn.bias_add(g_3, biases['bg3'])
-    g_3 = tf.contrib.layers.batch_norm(g_3, is_training=phase_train)
-    g_3 = tf.nn.relu(g_3)
+        g_3 = tf.nn.conv3d_transpose(g_2, weights['wg3'], (batch_size,16,16,16,128), strides=strides, padding="SAME")
+        g_3 = tf.nn.bias_add(g_3, biases['bg3'])
+        g_3 = tf.contrib.layers.batch_norm(g_3, is_training=phase_train)
+        g_3 = tf.nn.relu(g_3)
 
-    g_4 = tf.nn.conv3d(g_3, weights['wg4'], strides=strides, padding="SAME")
-    g_4 = tf.nn.bias_add(g_4, biases['bg4'])
-    g_4 = tf.contrib.layers.batch_norm(g_4, is_training=phase_train)
-    g_4 = tf.nn.relu(g_4)
-    
-    g_5 = tf.nn.conv3d(g_4, weights['wg5'], strides=strides, padding="SAME")
-    g_5 = tf.nn.bias_add(g_5, biases['bg5'])
-    g_5 = tf.nn.sigmoid(g_5)
+        g_4 = tf.nn.conv3d_transpose(g_3, weights['wg4'], (batch_size,32,32,32,64), strides=strides, padding="SAME")
+        g_4 = tf.nn.bias_add(g_4, biases['bg4'])
+        g_4 = tf.contrib.layers.batch_norm(g_4, is_training=phase_train)
+        g_4 = tf.nn.relu(g_4)
+        
+        g_5 = tf.nn.conv3d_transpose(g_4, weights['wg5'], (batch_size,64,64,64,1), strides=strides, padding="SAME")
+        g_5 = tf.nn.bias_add(g_5, biases['bg5'])
+        g_5 = tf.nn.sigmoid(g_5)
+
+    print g_1, 'g1'
+    print g_2, 'g2'
+    print g_3, 'g3'
+    print g_4, 'g4'
+    print g_5, 'g5'
     
     return g_5
 
@@ -66,31 +73,37 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
 def discriminator(inputs, phase_train=True, reuse=False):
 
     strides    = [1,2,2,2,1]
+    with tf.variable_scope("dis"):
+        d_1 = tf.nn.conv3d(inputs, weights['wd1'], strides=strides, padding="SAME")
+        d_1 = tf.nn.bias_add(d_1, biases['bd1'])
+        d_1 = tf.contrib.layers.batch_norm(d_1, is_training=phase_train)                               
+        d_1 = lrelu(d_1, leak_value)
 
-    d_1 = tf.nn.conv3d(inputs, weights['wd1'], strides=strides, padding="SAME")
-    d_1 = tf.nn.bias_add(d_1, biases['bd1'])
-    d_1 = tf.contrib.layers.batch_norm(d_1, is_training=phase_train)                               
-    d_1 = lrelu(d_1, leak_value)
+        d_2 = tf.nn.conv3d(d_1, weights['wd2'], strides=strides, padding="SAME") 
+        d_2 = tf.nn.bias_add(d_2, biases['bd2'])
+        d_2 = tf.contrib.layers.batch_norm(d_2, is_training=phase_train)
+        d_2 = lrelu(d_2, leak_value)
+        
+        d_3 = tf.nn.conv3d(d_2, weights['wd3'], strides=strides, padding="SAME")  
+        d_3 = tf.nn.bias_add(d_3, biases['bd3'])
+        d_3 = tf.contrib.layers.batch_norm(d_3, is_training=phase_train)
+        d_3 = lrelu(d_3, leak_value) 
 
-    d_2 = tf.nn.conv3d(d_1, weights['wd2'], strides=strides, padding="SAME") 
-    d_2 = tf.nn.bias_add(d_2, biases['bd2'])
-    d_2 = tf.contrib.layers.batch_norm(d_2, is_training=phase_train)
-    d_2 = lrelu(d_2, leak_value)
-    
-    d_3 = tf.nn.conv3d(d_2, weights['wd3'], strides=strides, padding="SAME")  
-    d_3 = tf.nn.bias_add(d_3, biases['bd3'])
-    d_3 = tf.contrib.layers.batch_norm(d_3, is_training=phase_train)
-    d_3 = lrelu(d_3, leak_value) 
+        d_4 = tf.nn.conv3d(d_3, weights['wd4'], strides=strides, padding="SAME")     
+        d_4 = tf.nn.bias_add(d_4, biases['bd4'])
+        d_4 = tf.contrib.layers.batch_norm(d_4, is_training=phase_train)
+        d_4 = tf.nn.relu(d_4)
 
-    d_4 = tf.nn.conv3d(d_3, weights['wd4'], strides=strides, padding="SAME")     
-    d_4 = tf.nn.bias_add(d_4, biases['bd4'])
-    d_4 = tf.contrib.layers.batch_norm(d_4, is_training=phase_train)
-    d_4 = lrelu(d_4, leak_value) 
+        d_5 = tf.nn.conv3d(d_4, weights['wd5'], strides=[1,1,1,1,1], padding="VALID")     
+        d_5 = tf.nn.bias_add(d_5, biases['bd5'])
+        d_5 = tf.contrib.layers.batch_norm(d_5, is_training=phase_train)
+        d_5 = tf.nn.sigmoid(d_5)
 
-    d_5 = tf.nn.conv3d(d_4, weights['wd5'], strides=[1,1,1,1,1], padding="SAME")     
-    d_5 = tf.nn.bias_add(d_5, biases['bd5'])
-    d_5 = tf.contrib.layers.batch_norm(d_5, is_training=phase_train)
-    d_5 = tf.nn.sigmoid(d_5)
+    print d_1, 'd1'
+    print d_2, 'd2'
+    print d_3, 'd3'
+    print d_4, 'd4'
+    print d_5, 'd5'
 
     return d_5
 
@@ -99,11 +112,11 @@ def initialiseWeights():
     global weights
     xavier_init = tf.contrib.layers.xavier_initializer()
 
-    weights['wg1'] = tf.get_variable("wg1", shape=[4, 4, 4, 200, 512], initializer=xavier_init)
-    weights['wg2'] = tf.get_variable("wg2", shape=[4, 4, 4, 512, 256], initializer=xavier_init)
-    weights['wg3'] = tf.get_variable("wg3", shape=[4, 4, 4, 256, 128], initializer=xavier_init)
-    weights['wg4'] = tf.get_variable("wg4", shape=[4, 4, 4, 128, 64], initializer=xavier_init)
-    weights['wg5'] = tf.get_variable("wg5", shape=[4, 4, 4, 64, 1], initializer=xavier_init)    
+    weights['wg1'] = tf.get_variable("wg1", shape=[4, 4, 4, 512, 200], initializer=xavier_init)
+    weights['wg2'] = tf.get_variable("wg2", shape=[4, 4, 4, 256, 512], initializer=xavier_init)
+    weights['wg3'] = tf.get_variable("wg3", shape=[4, 4, 4, 128, 256], initializer=xavier_init)
+    weights['wg4'] = tf.get_variable("wg4", shape=[4, 4, 4, 64, 128], initializer=xavier_init)
+    weights['wg5'] = tf.get_variable("wg5", shape=[4, 4, 4, 1, 64], initializer=xavier_init)    
 
     weights['wd1'] = tf.get_variable("wd1", shape=[4, 4, 4, 1, 64], initializer=xavier_init)
     weights['wd2'] = tf.get_variable("wd2", shape=[4, 4, 4, 64, 128], initializer=xavier_init)
@@ -149,20 +162,32 @@ def trainGAN(is_dummy=False):
     d_output_z = tf.maximum(tf.minimum(d_output_z, 0.99), 0.01)
     summary_d_z_hist = tf.summary.histogram("d_prob_z", d_output_z)
 
+    # Compute the discriminator accuracy
+    n_p_x = tf.reduce_sum(tf.cast(d_output_x > 0.5, tf.int32))
+    n_p_z = tf.reduce_sum(tf.cast(d_output_z <= 0.5, tf.int32))
+    d_acc = tf.divide(n_p_x + n_p_z, 2 * batch_size)
+
     d_loss = -tf.reduce_mean(tf.log(d_output_x) + tf.log(1-d_output_z))
     summary_d_loss = tf.summary.scalar("d_loss", d_loss)
     
     g_loss = -tf.reduce_mean(tf.log(d_output_z))
     summary_g_loss = tf.summary.scalar("g_loss", g_loss)
 
-    net_g_test = generator(z_vector, phase_train=True, reuse=True)
-    para_g=list(np.array(tf.trainable_variables())[[0,1,4,5,8,9,12,13]])
-    para_d=list(np.array(tf.trainable_variables())[[14,15,16,17,20,21,24,25]])#,28,29]])
+    net_g_test = generator(z_vector, phase_train=False, reuse=True)
+
+    para_d = [var for var in tf.trainable_variables() if any(x in var.name for x in ['wg', 'bg', 'gen'])]
+    para_g = [var for var in tf.trainable_variables() if any(x in var.name for x in ['wd', 'bd', 'dis'])]
+
+    print [v.name for v in para_d]
+    print [v.name for v in para_g]
+
+    # para_g=list(np.array(tf.trainable_variables())[[0,1,4,5,8,9,12,13]])
+    # para_d=list(np.array(tf.trainable_variables())[[14,15,16,17,20,21,24,25]])#,28,29]])
 
     # only update the weights for the discriminator network
-    optimizer_op_d = tf.train.AdamOptimizer(learning_rate=alpha_d,beta1=beta).minimize(d_loss,var_list=para_d)
+    optimizer_op_d = tf.train.AdamOptimizer(learning_rate=d_lr,beta1=beta).minimize(d_loss,var_list=para_d)
     # only update the weights for the generator network
-    optimizer_op_g = tf.train.AdamOptimizer(learning_rate=alpha_g,beta1=beta).minimize(g_loss,var_list=para_g)
+    optimizer_op_g = tf.train.AdamOptimizer(learning_rate=g_lr,beta1=beta).minimize(g_loss,var_list=para_g)
 
     saver = tf.train.Saver(max_to_keep=50) 
 
@@ -176,7 +201,7 @@ def trainGAN(is_dummy=False):
             volumes = d.getAll(obj=obj, train=True, is_local=True)
         volumes = volumes[...,np.newaxis].astype(np.float) 
 
-        for epoch in tqdm(range(n_epochs)):
+        for epoch in range(n_epochs):
             
             idx = np.random.randint(len(volumes), size=batch_size)
             x = volumes[idx]
@@ -187,18 +212,15 @@ def trainGAN(is_dummy=False):
 
             summary_d, discriminator_loss = sess.run([d_summary_merge,d_loss],feed_dict={z_vector:z, x_vector:x})
             summary_g, generator_loss = sess.run([summary_g_loss,g_loss],feed_dict={z_vector:z})  
-            d_x, d_z = sess.run([d_output_x, d_output_z],feed_dict={z_vector:z, x_vector:x})
+            d_accuracy, n_x, n_z = sess.run([d_acc, n_p_x, n_p_z],feed_dict={z_vector:z, x_vector:x})
+            print n_x, n_z
 
-            # Compute the discriminator accuracy
-            n_p_x = tf.reduce_sum(tf.cast(d_x > 0.5, tf.float32))
-            n_p_z = tf.reduce_sum(tf.cast(d_z <= 0.5, tf.float32))
-            d_acc = (n_p_x + n_p_z) / float(2 * batch_size)
-
-            if d_acc.eval() < 0.8:
+            if d_accuracy < 0.8:
                 sess.run([optimizer_op_d],feed_dict={z_vector:z, x_vector:x})
+                print 'Discriminator Training ', "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss, "d_acc: ", d_accuracy
 
             sess.run([optimizer_op_g],feed_dict={z_vector:z})
-            print "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss
+            print 'Generator Training ', "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss, "d_acc: ", d_accuracy
 
             # output generated chairs
             if epoch % 500 == 10:
@@ -213,4 +235,5 @@ def trainGAN(is_dummy=False):
                 saver.save(sess, save_path = model_directory + '/' + str(epoch) + '.cptk')
 
 if __name__ == '__main__':
-    trainGAN(is_dummy=True)
+    is_dummy = bool(sys.argv[1])
+    trainGAN(is_dummy=is_dummy)
