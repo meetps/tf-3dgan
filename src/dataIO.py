@@ -79,12 +79,13 @@ def getVoxelFromMat(path, cube_len=64):
         voxels = nd.zoom(voxels, (2,2,2), mode='constant', order=0)
     return voxels
 
-def getAll(obj='airplane',train=True, is_local=False, cube_len=64):
+def getAll(obj='airplane',train=True, is_local=False, cube_len=64, obj_ratio=1.0):
     objPath = SERVER_PATH + obj + '/30/'
     if is_local:
         objPath = LOCAL_PATH + obj + '/30/'
     objPath += 'train/' if train else 'test/'
     fileList = [f for f in os.listdir(objPath) if f.endswith('.mat')]
+    fileList = fileList[0:int(obj_ratio*len(fileList))]
     volumeBatch = np.asarray([getVoxelFromMat(objPath + f, cube_len) for f in fileList],dtype=np.bool)
     return volumeBatch
 

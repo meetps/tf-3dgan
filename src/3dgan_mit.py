@@ -21,11 +21,12 @@ d_thresh   = 0.8
 z_size     = 200
 leak_value = 0.2
 cube_len   = 64
+obj_ratio  = 0.5
 obj        = 'chair' 
 
 train_sample_directory = './train_sample/'
 model_directory = './models/'
-is_local = True
+is_local = False
 
 weights, biases = {}, {}
 
@@ -57,7 +58,7 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
         
         g_5 = tf.nn.conv3d_transpose(g_4, weights['wg5'], (batch_size,64,64,64,1), strides=strides, padding="SAME")
         g_5 = tf.nn.bias_add(g_5, biases['bg5'])
-        g_5 = tf.nn.sigmoid(g_5)
+        g_5 = tf.nn.tanh(g_5)
 
     print g_1, 'g1'
     print g_2, 'g2'
@@ -193,9 +194,10 @@ def trainGAN(is_dummy=False):
         z_sample = np.random.normal(0, 0.33, size=[batch_size, z_size]).astype(np.float32)
         if is_dummy:
             volumes = np.random.randint(0,2,(batch_size,cube_len,cube_len,cube_len))
-            n_epochs = 1
+            print 'Using Dummy Data'
         else:
-            volumes = d.getAll(obj=obj, train=True, is_local=True)
+            volumes = d.getAll(obj=obj, train=True, is_local=is_local, obj_ratio=obj_ratio)
+            print 'Using ' + obj + ' Data'
         volumes = volumes[...,np.newaxis].astype(np.float) 
 
         for epoch in range(n_epochs):
@@ -208,7 +210,6 @@ def trainGAN(is_dummy=False):
             d_summary_merge = tf.summary.merge([summary_d_loss,
                                                 summary_d_x_hist, 
                                                 summary_d_z_hist,
-                                                summary_d_loss,
                                                 summary_n_p_x,
                                                 summary_n_p_z,
                                                 summary_d_acc])
@@ -238,5 +239,6 @@ def trainGAN(is_dummy=False):
                 saver.save(sess, save_path = model_directory + '/' + str(epoch) + '.cptk')
 
 if __name__ == '__main__':
-    is_dummy = bool(sys.argv[1])
+    is_dummy = bool(int(sys.argv[1]))
+    print is_dummy
     trainGAN(is_dummy=is_dummy)
