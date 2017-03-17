@@ -49,8 +49,16 @@ class batch_norm(object):
                       is_training=train,
                       scope=self.name)
 
-def lrelu(x, leak=0.2, name="lrelu"):
-     with tf.variable_scope(name):
-         f1 = 0.5 * (1 + leak)
-         f2 = 0.5 * (1 - leak)
-         return f1 * x + f2 * abs(x)
+
+def threshold(x, val=0.5):
+    x = tf.clip_by_value(x,0.5,0.5001) - 0.5
+    x = tf.minimum(x * 10000,1) 
+    return x
+
+def lrelu(x, leak=0.2):
+    return tf.maximum(x, leak*x)
+
+# def lrelu(x, leak=0.2):
+#     f1 = 0.5 * (1 + leak)
+#     f2 = 0.5 * (1 - leak)
+#     return f1 * x + f2 * abs(x)

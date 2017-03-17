@@ -24,6 +24,9 @@ z_size     = 200
 leak_value = 0.2
 cube_len   = 64
 obj_ratio  = 0.5
+reg_l2     = 0.001
+gan_inter  = 50
+ae_inter   = 50
 obj        = 'chair' 
 
 train_sample_directory = './train_sample/'
@@ -177,7 +180,7 @@ def initialiseBiases():
 
     return biases
 
-def trainGAN(is_dummy=False):
+def trainGAN(is_dummy=False, exp_id=None):
 
     weights, biases =  initialiseWeights(), initialiseBiases()
     x_vector = tf.placeholder(shape=[batch_size,cube_len,cube_len,cube_len,1],dtype=tf.float32) 
@@ -195,9 +198,22 @@ def trainGAN(is_dummy=False):
 
     decoded_test = generator(tf.maximum(tf.minimum(encoder(x_vector, phase_train=False, reuse=False), 0.99), 0.01), phase_train=False, reuse=False)
 
-    # Compute MSE Loss
+    # Round decoder output
+    decoded = threshold(decoded)
+    # Compute MSE Loss and L2 Loss
     mse_loss = tf.reduce_mean(tf.pow(x_vector - decoded, 2))
-    optimizer_ae = tf.train.AdamOptimizer(learning_rate=ae_lr,beta1=beta, name="Adam_AE").minimize(mse_loss)
+    para_ae = [var for var in tf.trainable_variables() if any(x in var.name for x in ['wg', 'wd', 'wae'])]
+    for var in tf.trainable_variables():
+        if 'wd5' in var.name:
+            last_layer_dis = var
+    para_ae.remove(last_layer_dis)
+    # l2_loss = tf.add_n([tf.nn.l2_loss(v) for v in para_ae])
+    # ae_loss = mse_loss + reg_l2 * l2_loss
+    ae_loss = mse_loss     
+
+    optimizer_ae = tf.train.AdamOptimizer(learning_rate=ae_lr,beta1=beta, name="Adam_AE").minimize(ae_loss)
+    # optimizer_ae = tf.train.RMSPropOptimizer(learning_rate=ae_lr, name="RMS_AE").minimize(ae_loss)
+
 
     net_g_train = generator(z_vector, phase_train=True, reuse=False) 
 
@@ -253,17 +269,20 @@ def trainGAN(is_dummy=False):
             x = volumes[idx]
 
             # Autoencoder pretraining
-            meansquarerror_loss, _ = sess.run([mse_loss, optimizer_ae],feed_dict={x_vector:x})
-            print 'Autoencoder Training ', "epoch: ",epoch, 'mse_loss:', meansquarerror_loss
+            # ae_l, mse_l, l2_l, _ = sess.run([ae_loss, mse_loss, l2_loss, optimizer_ae],feed_dict={x_vector:x})
+            # print 'Autoencoder Training ', "epoch: ",epoch, 'ae_loss:', ae_l, 'mse_loss:', mse_l, 'l2_loss:', l2_l
+
+            ae_l, mse_l, _ = sess.run([ae_loss, mse_loss, optimizer_ae],feed_dict={x_vector:x})
+            print 'Autoencoder Training ', "epoch: ",epoch, 'ae_loss:', ae_l, 'mse_loss:', mse_l
 
             # output generated chairs
-            if epoch % 50 == 10:
+            if epoch % ae_inter == 10:
                 idx = np.random.randint(len(volumes), size=batch_size)
                 x = volumes[idx]
                 decoded_chairs = sess.run(decoded_test, feed_dict={x_vector:x})
                 if not os.path.exists(train_sample_directory):
                     os.makedirs(train_sample_directory)
-                decoded_chairs.dump(train_sample_directory+'/ae'+str(epoch))
+                decoded_chairs.dump(train_sample_directory+'/ae_' + exp_id +str(epoch))
 
         for epoch in range(n_epochs):
             
@@ -292,17 +311,18 @@ def trainGAN(is_dummy=False):
             print 'Generator Training ', "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss, "d_acc: ", d_accuracy
 
             # output generated chairs
-            if epoch % 500 == 10:
+            if epoch % gan_inter == 10:
                 g_chairs = sess.run(net_g_test,feed_dict={z_vector:z_sample})
                 if not os.path.exists(train_sample_directory):
                     os.makedirs(train_sample_directory)
                 g_chairs.dump(train_sample_directory+'/'+str(epoch))
             
-            if epoch % 500 == 10:
+            if epoch % gan_inter == 10:
                 if not os.path.exists(model_directory):
                     os.makedirs(model_directory)      
                 saver.save(sess, save_path = model_directory + '/' + str(epoch) + '.cptk')
 
 if __name__ == '__main__':
     is_dummy = bool(int(sys.argv[1]))
-    trainGAN(is_dummy=is_dummy)
+    exp_id = sys.argv[2]
+    trainGAN(is_dummy=is_dummy, exp_id=exp_id)
