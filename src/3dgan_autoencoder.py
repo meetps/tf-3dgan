@@ -13,9 +13,11 @@ from utils import *
 Global Parameters
 '''
 n_epochs   = 10000
+n_ae_epochs= 1000
 batch_size = 50
 g_lr       = 0.0025
 d_lr       = 0.00001
+ae_lr      = 0.0001
 beta       = 0.5
 d_thresh   = 0.8 
 z_size     = 200
@@ -68,11 +70,42 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
     
     return g_5
 
+def encoder(inputs, phase_train=True, reuse=False):
+
+    strides    = [1,2,2,2,1]
+    with tf.variable_scope("dis"):
+        d_1 = tf.nn.conv3d(inputs, weights['wd1'], strides=strides, padding="SAME")
+        d_1 = tf.nn.bias_add(d_1, biases['bd1'])
+        d_1 = tf.contrib.layers.batch_norm(d_1, is_training=phase_train)                               
+        d_1 = lrelu(d_1, leak_value)
+
+        d_2 = tf.nn.conv3d(d_1, weights['wd2'], strides=strides, padding="SAME") 
+        d_2 = tf.nn.bias_add(d_2, biases['bd2'])
+        d_2 = tf.contrib.layers.batch_norm(d_2, is_training=phase_train)
+        d_2 = lrelu(d_2, leak_value)
+        
+        d_3 = tf.nn.conv3d(d_2, weights['wd3'], strides=strides, padding="SAME")  
+        d_3 = tf.nn.bias_add(d_3, biases['bd3'])
+        d_3 = tf.contrib.layers.batch_norm(d_3, is_training=phase_train)
+        d_3 = lrelu(d_3, leak_value) 
+
+        d_4 = tf.nn.conv3d(d_3, weights['wd4'], strides=strides, padding="SAME")     
+        d_4 = tf.nn.bias_add(d_4, biases['bd4'])
+        d_4 = tf.contrib.layers.batch_norm(d_4, is_training=phase_train)
+        d_4 = lrelu(d_4)
+
+        d_5 = tf.nn.conv3d(d_4, weights['wae_d'], strides=[1,1,1,1,1], padding="VALID")     
+        d_5 = tf.nn.bias_add(d_5, biases['bae_d'])
+        d_5 = tf.nn.sigmoid(d_5)
+
+    print d_5, 'ae5'
+
+    return d_5
 
 def discriminator(inputs, phase_train=True, reuse=False):
 
     strides    = [1,2,2,2,1]
-    with tf.variable_scope("dis"):
+    with tf.variable_scope("dis", reuse=True):
         d_1 = tf.nn.conv3d(inputs, weights['wd1'], strides=strides, padding="SAME")
         d_1 = tf.nn.bias_add(d_1, biases['bd1'])
         d_1 = tf.contrib.layers.batch_norm(d_1, is_training=phase_train)                               
@@ -147,9 +180,24 @@ def initialiseBiases():
 def trainGAN(is_dummy=False):
 
     weights, biases =  initialiseWeights(), initialiseBiases()
-
-    z_vector = tf.placeholder(shape=[batch_size,z_size],dtype=tf.float32) 
     x_vector = tf.placeholder(shape=[batch_size,cube_len,cube_len,cube_len,1],dtype=tf.float32) 
+    z_vector = tf.placeholder(shape=[batch_size,z_size],dtype=tf.float32) 
+
+    # Weights for autoencoder pretraining
+    xavier_init = tf.contrib.layers.xavier_initializer()
+    zero_init = tf.zeros_initializer()
+    weights['wae_d'] = tf.get_variable("wae_d", shape=[4, 4, 4, 512, 200], initializer=xavier_init)
+    biases['bae_d'] =  tf.get_variable("bae_d", shape=[200], initializer=zero_init)
+
+    encoded = encoder(x_vector, phase_train=True, reuse=False)
+    encoded = tf.maximum(tf.minimum(encoded, 0.99), 0.01)
+    decoded = generator(encoded, phase_train=True, reuse=False) 
+
+    decoded_test = generator(tf.maximum(tf.minimum(encoder(x_vector, phase_train=False, reuse=False), 0.99), 0.01), phase_train=False, reuse=False)
+
+    # Compute MSE Loss
+    mse_loss = tf.reduce_mean(tf.pow(x_vector - decoded, 2))
+    optimizer_ae = tf.train.AdamOptimizer(learning_rate=ae_lr,beta1=beta, name="Adam_AE").minimize(mse_loss)
 
     net_g_train = generator(z_vector, phase_train=True, reuse=False) 
 
@@ -199,6 +247,23 @@ def trainGAN(is_dummy=False):
             volumes = d.getAll(obj=obj, train=True, is_local=is_local, obj_ratio=obj_ratio)
             print 'Using ' + obj + ' Data'
         volumes = volumes[...,np.newaxis].astype(np.float) 
+
+        for epoch in range(n_ae_epochs):
+            idx = np.random.randint(len(volumes), size=batch_size)
+            x = volumes[idx]
+
+            # Autoencoder pretraining
+            meansquarerror_loss, _ = sess.run([mse_loss, optimizer_ae],feed_dict={x_vector:x})
+            print 'Autoencoder Training ', "epoch: ",epoch, 'mse_loss:', meansquarerror_loss
+
+            # output generated chairs
+            if epoch % 50 == 10:
+                idx = np.random.randint(len(volumes), size=batch_size)
+                x = volumes[idx]
+                decoded_chairs = sess.run(decoded_test, feed_dict={x_vector:x})
+                if not os.path.exists(train_sample_directory):
+                    os.makedirs(train_sample_directory)
+                decoded_chairs.dump(train_sample_directory+'/ae'+str(epoch))
 
         for epoch in range(n_epochs):
             
