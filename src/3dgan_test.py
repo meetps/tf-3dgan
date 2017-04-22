@@ -13,7 +13,7 @@ from utils import *
 Global Parameters
 '''
 n_epochs   = 10000
-batch_size = 64
+batch_size = 32
 g_lr       = 0.0025
 d_lr       = 0.00001
 beta       = 0.5
@@ -96,18 +96,18 @@ def discriminator(inputs, phase_train=True, reuse=False):
 
     return d_5
 
-def initialiseMITWeights(file_path):
+def initialiseMITWeights(file_path='../../mit_weights.npy'):
+    global weights
 
     mit_weights = np.load(file_path)
     layer_idx = ['1', '4', '7', '10', '13'] 
 
-    global weights
 
-    weights['wg1'] = tf.get_variable("wg1", shape=[4, 4, 4, 512, 200], initializer=tf.constant(mit_weights['1'].transpose(2,3,4,1,0)))
-    weights['wg2'] = tf.get_variable("wg2", shape=[4, 4, 4, 256, 512], initializer=tf.constant(mit_weights['4'].transpose(2,3,4,1,0)))
-    weights['wg3'] = tf.get_variable("wg3", shape=[4, 4, 4, 128, 256], initializer=tf.constant(mit_weights['7'].transpose(2,3,4,1,0)))
-    weights['wg4'] = tf.get_variable("wg4", shape=[4, 4, 4, 64, 128], initializer=tf.constant(mit_weights['10'].transpose(2,3,4,1,0)))
-    weights['wg5'] = tf.get_variable("wg5", shape=[4, 4, 4, 1, 64], initializer=tf.constant(mit_weights['13'].transpose(2,3,4,1,0)))    
+    weights['wg1'] = tf.get_variable("wg1", initializer=tf.constant(mit_weights[()]['1'].transpose(2,3,4,1,0).astype(np.float32)))
+    weights['wg2'] = tf.get_variable("wg2", initializer=tf.constant(mit_weights[()]['4'].transpose(2,3,4,1,0).astype(np.float32)))
+    weights['wg3'] = tf.get_variable("wg3", initializer=tf.constant(mit_weights[()]['7'].transpose(2,3,4,1,0).astype(np.float32)))
+    weights['wg4'] = tf.get_variable("wg4", initializer=tf.constant(mit_weights[()]['10'].transpose(2,3,4,1,0).astype(np.float32)))
+    weights['wg5'] = tf.get_variable("wg5", initializer=tf.constant(mit_weights[()]['13'].transpose(2,3,4,1,0).astype(np.float32)))    
 
     return weights
 
@@ -252,8 +252,9 @@ def testGAN():
         g_chairs = sess.run(net_g_test,feed_dict={z_vector:z_sample})
         if not os.path.exists(train_sample_directory):
             os.makedirs(train_sample_directory)
-            g_chairs.dump(train_sample_directory+'/biasfree_trained_'+str(epoch))
+        g_chairs.dump(train_sample_directory+'/biasfree_trained_' + str(batch_size))
 
 if __name__ == '__main__':
-    is_dummy = bool(int(sys.argv[1]))
-    trainGAN(is_dummy=is_dummy)
+    #is_dummy = bool(int(sys.argv[1]))
+    #trainGAN(is_dummy=is_dummy)
+    testGAN()

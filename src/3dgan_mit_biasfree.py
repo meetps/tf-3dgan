@@ -13,7 +13,7 @@ from utils import *
 Global Parameters
 '''
 n_epochs   = 10000
-batch_size = 64
+batch_size = 32
 g_lr       = 0.0025
 d_lr       = 0.00001
 beta       = 0.5
@@ -53,8 +53,8 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
         g_4 = tf.nn.relu(g_4)
         
         g_5 = tf.nn.conv3d_transpose(g_4, weights['wg5'], (batch_size,64,64,64,1), strides=strides, padding="SAME")
-        g_5 = tf.nn.sigmoid(g_5)
-        # g_5 = tf.nn.tanh(g_5)
+        # g_5 = tf.nn.sigmoid(g_5)
+        g_5 = tf.nn.tanh(g_5)
 
     print g_1, 'g1'
     print g_2, 'g2'
@@ -86,6 +86,7 @@ def discriminator(inputs, phase_train=True, reuse=False):
         d_4 = lrelu(d_4)
 
         d_5 = tf.nn.conv3d(d_4, weights['wd5'], strides=[1,1,1,1,1], padding="VALID")     
+        d_5_no_sigmoid = d_5
         d_5 = tf.nn.sigmoid(d_5)
 
     print d_1, 'd1'
@@ -94,7 +95,7 @@ def discriminator(inputs, phase_train=True, reuse=False):
     print d_4, 'd4'
     print d_5, 'd5'
 
-    return d_5
+    return d_5, d_5_no_sigmoid
 
 def initialiseWeights():
 
@@ -125,11 +126,11 @@ def trainGAN(is_dummy=False):
 
     net_g_train = generator(z_vector, phase_train=True, reuse=False) 
 
-    d_output_x = discriminator(x_vector, phase_train=True, reuse=False)
+    d_output_x, d_no_sigmoid_output_x = discriminator(x_vector, phase_train=True, reuse=False)
     d_output_x = tf.maximum(tf.minimum(d_output_x, 0.99), 0.01)
     summary_d_x_hist = tf.summary.histogram("d_prob_x", d_output_x)
 
-    d_output_z = discriminator(net_g_train, phase_train=True, reuse=True)
+    d_output_z, d_no_sigmoid_output_z = discriminator(net_g_train, phase_train=True, reuse=True)
     d_output_z = tf.maximum(tf.minimum(d_output_z, 0.99), 0.01)
     summary_d_z_hist = tf.summary.histogram("d_prob_z", d_output_z)
 
@@ -142,8 +143,8 @@ def trainGAN(is_dummy=False):
     # d_loss = -tf.reduce_mean(tf.log(d_output_x) + tf.log(1-d_output_z))
     # g_loss = -tf.reduce_mean(tf.log(d_output_z))
 
-    d_loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=d_output_x, labels=tf.ones_like(d_output_x)) + tf.nn.sigmoid_cross_entropy_with_logits(logits=d_output_z, labels=tf.zeros_like(d_output_z))
-    g_loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=d_output_z, labels=tf.ones_like(d_output_z))
+    d_loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=d_no_sigmoid_output_x, labels=tf.ones_like(d_output_x)) + tf.nn.sigmoid_cross_entropy_with_logits(logits=d_no_sigmoid_output_z, labels=tf.zeros_like(d_output_z))
+    g_loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=d_no_sigmoid_output_z, labels=tf.ones_like(d_output_z))
     
     d_loss = tf.reduce_mean(d_loss)
     g_loss = tf.reduce_mean(g_loss)
@@ -154,7 +155,7 @@ def trainGAN(is_dummy=False):
     summary_n_p_x = tf.summary.scalar("n_p_x", n_p_x)
     summary_d_acc = tf.summary.scalar("d_acc", d_acc)
 
-    net_g_test = generator(z_vector, phase_train=False, reuse=True)
+    net_g_test = generator(z_vector, phase_train=True, reuse=True)
 
     para_g = [var for var in tf.trainable_variables() if any(x in var.name for x in ['wg', 'bg', 'gen'])]
     para_d = [var for var in tf.trainable_variables() if any(x in var.name for x in ['wd', 'bd', 'dis'])]
@@ -166,10 +167,10 @@ def trainGAN(is_dummy=False):
 
     saver = tf.train.Saver(max_to_keep=50) 
 
+
     with tf.Session() as sess:  
       
         sess.run(tf.global_variables_initializer())        
-        z_sample = np.random.normal(0, 0.33, size=[batch_size, z_size]).astype(np.float32)
         if is_dummy:
             volumes = np.random.randint(0,2,(batch_size,cube_len,cube_len,cube_len))
             print 'Using Dummy Data'
@@ -184,8 +185,9 @@ def trainGAN(is_dummy=False):
             
             idx = np.random.randint(len(volumes), size=batch_size)
             x = volumes[idx]
-            # z = np.random.normal(0, 1, size=[batch_size, z_size]).astype(np.float32)
-            z = np.random.uniform(0, 1, size=[batch_size, z_size]).astype(np.float32)
+            z_sample = np.random.normal(0, 0.33, size=[batch_size, z_size]).astype(np.float32)
+            z = np.random.normal(0, 0.33, size=[batch_size, z_size]).astype(np.float32)
+            # z = np.random.uniform(0, 1, size=[batch_size, z_size]).astype(np.float32)
 
             # Update the discriminator and generator
             d_summary_merge = tf.summary.merge([summary_d_loss,

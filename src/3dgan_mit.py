@@ -14,8 +14,8 @@ Global Parameters
 '''
 n_epochs   = 10000
 batch_size = 50
-g_lr       = 0.0025
-d_lr       = 0.00001
+g_lr       = 0.008
+d_lr       = 0.000001
 beta       = 0.5
 d_thresh   = 0.8 
 z_size     = 200
@@ -95,7 +95,6 @@ def discriminator(inputs, phase_train=True, reuse=False):
 
         d_5 = tf.nn.conv3d(d_4, weights['wd5'], strides=[1,1,1,1,1], padding="VALID")     
         d_5 = tf.nn.bias_add(d_5, biases['bd5'])
-        d_5 = tf.contrib.layers.batch_norm(d_5, is_training=phase_train)
         d_5 = tf.nn.sigmoid(d_5)
 
     print d_1, 'd1'
