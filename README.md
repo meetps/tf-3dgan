@@ -8,8 +8,6 @@
 This is a tensorflow implementation of the paper "Learning a Probabilistic Latent Space of Object Shapes 
 via 3D Generative-Adversarial Modeling"
 
-[web](http://3dgan.csail.mit.edu/)  
-
 ![](http://3dgan.csail.mit.edu/images/model.jpg)
 
 
