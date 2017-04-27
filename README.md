@@ -23,6 +23,7 @@ via 3D Generative-Adversarial Modeling"
 
 
 #### One-line installation
+    
     ```
     pip install scipy scikit-image stl visdom
     ```
@@ -34,7 +35,7 @@ via 3D Generative-Adversarial Modeling"
 
 ### Usage
 
-To train the model
+To train the model (visdom will show generated chairs after every 200 minibatches)
 
 ```
 python 3dgan_mit_biasfree.py 0 <path_to_model_checkpoint>
@@ -45,6 +46,12 @@ To generate chairs
 ```
 python 3dgan_mit_biasfree.py 1 <path_to_trained_model>
 ```
+
+Some sample generated chairs
+
+|            |              |            |          |          |
+|------------|--------------|------------|----------|----------|
+|![](http://homepages.iitb.ac.in/~meetshah1995/files/2_.png) | ![](http://homepages.iitb.ac.in/~meetshah1995/files/4_.png) |  ![](http://homepages.iitb.ac.in/~meetshah1995/files/1_.png) |  ![](http://homepages.iitb.ac.in/~meetshah1995/files/3_.png) |  ![](http://homepages.iitb.ac.in/~meetshah1995/files/5_.png) |
 
 
 ### Source code files
@@ -66,3 +73,4 @@ python 3dgan_mit_biasfree.py 1 <path_to_trained_model>
 * Add argparser based interface
 * Add threaded dataloader
 * Release the pytorch and keras versions of the GAN.
+* Train for longer number of epochs to improve quality of generated chairs. 
