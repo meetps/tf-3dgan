@@ -55,6 +55,10 @@ def plotMeshFromVoxels(voxels, threshold=0.5):
     v,f = getVFByMarchingCubes(voxels, threshold)
     plotFromVF(v,f)
 
+def plotVoxelVisdom(voxels, visdom, title):
+    v, f = getVFByMarchingCubes(voxels)
+    visdom.mesh(X=v, Y=f, opts=dict(opacity=0.5, title=title))
+
 def plotFromVertices(vertices):
     figure = plt.figure()
     axes = mplot3d.Axes3D(figure)

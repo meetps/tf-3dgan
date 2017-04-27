@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
+import visdom
 
 import numpy as np
 import tensorflow as tf
@@ -21,7 +22,7 @@ d_thresh   = 0.8
 z_size     = 200
 leak_value = 0.2
 cube_len   = 64
-obj_ratio  = 0.5
+obj_ratio  = 0.7
 obj        = 'chair' 
 
 train_sample_directory = './train_sample/'
@@ -117,7 +118,7 @@ def initialiseWeights():
     return weights
 
 
-def trainGAN(is_dummy=False):
+def trainGAN(is_dummy=False, checkpoint=None):
 
     weights =  initialiseWeights()
 
@@ -155,7 +156,7 @@ def trainGAN(is_dummy=False):
     summary_n_p_x = tf.summary.scalar("n_p_x", n_p_x)
     summary_d_acc = tf.summary.scalar("d_acc", d_acc)
 
-    net_g_test = generator(z_vector, phase_train=True, reuse=True)
+    net_g_test = generator(z_vector, phase_train=False, reuse=True)
 
     para_g = [var for var in tf.trainable_variables() if any(x in var.name for x in ['wg', 'bg', 'gen'])]
     para_d = [var for var in tf.trainable_variables() if any(x in var.name for x in ['wd', 'bd', 'dis'])]
@@ -165,12 +166,16 @@ def trainGAN(is_dummy=False):
     # only update the weights for the generator network
     optimizer_op_g = tf.train.AdamOptimizer(learning_rate=g_lr,beta1=beta).minimize(g_loss,var_list=para_g)
 
-    saver = tf.train.Saver(max_to_keep=50) 
+    saver = tf.train.Saver() 
+    vis = visdom.Visdom()
 
 
     with tf.Session() as sess:  
       
         sess.run(tf.global_variables_initializer())        
+        if checkpoint is not None:
+            saver.restore(sess, checkpoint)        
+
         if is_dummy:
             volumes = np.random.randint(0,2,(batch_size,cube_len,cube_len,cube_len))
             print 'Using Dummy Data'
@@ -210,17 +215,57 @@ def trainGAN(is_dummy=False):
             print 'Generator Training ', "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss, "d_acc: ", d_accuracy
 
             # output generated chairs
-            if epoch % 50 == 10:
-                g_chairs = sess.run(net_g_test,feed_dict={z_vector:z_sample})
+            if epoch % 200 == 0:
+                g_objects = sess.run(net_g_test,feed_dict={z_vector:z_sample})
                 if not os.path.exists(train_sample_directory):
                     os.makedirs(train_sample_directory)
-                g_chairs.dump(train_sample_directory+'/biasfree_'+str(epoch))
-            
+                g_objects.dump(train_sample_directory+'/biasfree_'+str(epoch))
+                id_ch = np.random.randint(0, batch_size, 4)
+                for i in range(4):
+                    if g_objects[id_ch[i]].max() > 0.5:
+    		            d.plotVoxelVisdom(np.squeeze(g_objects[id_ch[i]]>0.5), vis, '_'.join(map(str,[epoch,i])))          
             if epoch % 50 == 10:
                 if not os.path.exists(model_directory):
                     os.makedirs(model_directory)      
                 saver.save(sess, save_path = model_directory + '/biasfree_' + str(epoch) + '.cptk')
 
+
+def testGAN(trained_model_path=None, n_batches=40):
+
+    weights = initialiseWeights()
+
+    z_vector = tf.placeholder(shape=[batch_size,z_size],dtype=tf.float32) 
+    net_g_test = generator(z_vector, phase_train=True, reuse=True)
+
+    vis = visdom.Visdom()
+
+    sess = tf.Session()
+    saver = tf.train.Saver()
+    
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        saver.restore(sess, trained_model_path) 
+
+        # output generated chairs
+        for i in range(n_batches):
+            next_sigma = float(raw_input())
+            z_sample = np.random.normal(0, next_sigma, size=[batch_size, z_size]).astype(np.float32)
+            g_objects = sess.run(net_g_test,feed_dict={z_vector:z_sample})
+            id_ch = np.random.randint(0, batch_size, 4)
+            for i in range(4):
+                print g_objects[id_ch[i]].max(), g_objects[id_ch[i]].min(), g_objects[id_ch[i]].shape
+                if g_objects[id_ch[i]].max() > 0.5:
+                    d.plotVoxelVisdom(np.squeeze(g_objects[id_ch[i]]>0.5), vis, '_'.join(map(str,[i])))
+
 if __name__ == '__main__':
-    is_dummy = bool(int(sys.argv[1]))
-    trainGAN(is_dummy=is_dummy)
+    test = bool(int(sys.argv[1]))
+    if test:
+        path = sys.argv[2]
+        testGAN(trained_model_path=path)
+    else:
+        ckpt = sys.argv[2]
+        if ckpt == '0':
+            trainGAN(is_dummy=False, checkpoint=None)
+        else:
+            trainGAN(is_dummy=False, checkpoint=ckpt)
+
