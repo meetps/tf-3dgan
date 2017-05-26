@@ -10,6 +10,7 @@ via 3D Generative-Adversarial Modeling"
 
 ![](http://3dgan.csail.mit.edu/images/model.jpg)
 
+[Blog Post with interactive volume plots](https://meetshah1995.github.io/gan/deep-learning/tensorflow/visdom/2017/04/01/3d-generative-adverserial-networks-for-volume-classification-and-generation.html)
 
 ### Requirements
 
