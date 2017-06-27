@@ -254,8 +254,8 @@ def testGAN(trained_model_path=None, n_batches=40):
             id_ch = np.random.randint(0, batch_size, 4)
             for i in range(4):
                 print g_objects[id_ch[i]].max(), g_objects[id_ch[i]].min(), g_objects[id_ch[i]].shape
-                if g_objects[id_ch[i]].max() > 0.5:
-                    d.plotVoxelVisdom(np.squeeze(g_objects[id_ch[i]]>0.5), vis, '_'.join(map(str,[i])))
+                if g_objects[id_ch[i]].max() > 0:
+                    d.plotVoxelVisdom(np.squeeze(g_objects[id_ch[i]]>0), vis, '_'.join(map(str,[i])))
 
 if __name__ == '__main__':
     test = bool(int(sys.argv[1]))
