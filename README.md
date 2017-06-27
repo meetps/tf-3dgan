@@ -23,9 +23,7 @@ via 3D Generative-Adversarial Modeling"
 
 #### One-line installation
     
-    ```
-    pip install scipy scikit-image stl visdom
-    ```
+`pip install scipy scikit-image stl visdom`
 
 ### Data
 
@@ -33,6 +31,12 @@ via 3D Generative-Adversarial Modeling"
 * Extract the zip and modify the path appropriately in `dataIO.py`
 
 ### Usage
+
+Launch [visdom](https://github.com/facebookresearch/visdom#launch) by running
+
+```
+python -m visdom.server
+```
 
 To train the model (visdom will show generated chairs after every 200 minibatches)
 
