@@ -76,4 +76,9 @@ Some sample generated chairs
 * Add argparser based interface
 * Add threaded dataloader
 * Release the pytorch and keras versions of the GAN.
-* Train for longer number of epochs to improve quality of generated chairs. 
+* Train for longer number of epochs to improve quality of generated chairs.
+
+### Contributors
+
+* @meetshah1995
+* @khushhallchandra
