@@ -35,7 +35,7 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
 
     strides    = [1,2,2,2,1]
 
-    with tf.variable_scope("gen"):
+    with tf.variable_scope("gen", reuse=reuse):
         z = tf.reshape(z, (batch_size, 1, 1, 1, z_size))
         g_1 = tf.nn.conv3d_transpose(z, weights['wg1'], (batch_size,4,4,4,512), strides=[1,1,1,1,1], padding="VALID")
         g_1 = tf.contrib.layers.batch_norm(g_1, is_training=phase_train)
@@ -69,7 +69,7 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
 def discriminator(inputs, phase_train=True, reuse=False):
 
     strides    = [1,2,2,2,1]
-    with tf.variable_scope("dis"):
+    with tf.variable_scope("dis", reuse=reuse):
         d_1 = tf.nn.conv3d(inputs, weights['wd1'], strides=strides, padding="SAME")
         d_1 = tf.contrib.layers.batch_norm(d_1, is_training=phase_train)                               
         d_1 = lrelu(d_1, leak_value)
