@@ -29,7 +29,7 @@ d_thresh   = 0.8
 z_size     = 200
 leak_value = 0.2
 obj_ratio  = 0.7
-obj        = 'chair' 
+obj        = 'chair'
 
 cube_len    = 64
 cube_channel= 1
@@ -62,8 +62,8 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
     with tf.variable_scope("gen", reuse=reuse):
         z = tf.reshape(z, (batch_size, 1, 1, 1, z_size))
         g_1 = tf.nn.conv3d_transpose(z, weights['wg1'], (batch_size,4,4,4,512), strides=[1,1,1,1,1], padding="VALID")
-        # g_1 = tf.nn.bias_add(g_1, biases['bg1'])                                  
-        # g_1 = tf.layers.batch_normalization(g_1, training=phase_train, epsilon=1e-4, momentum=0.9)
+        # g_1 = tf.nn.bias_add(g_1, biases['bg1'])
+        g_1 = tf.layers.batch_normalization(g_1, training=phase_train, epsilon=1e-4, momentum=0.9)
         g_1 = tf.nn.relu(g_1)
         print ('G1: ', g_1)
 
@@ -84,13 +84,13 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
         g_4 = tf.layers.batch_normalization(g_4, training=phase_train, epsilon=1e-4, momentum=0.9)
         g_4 = tf.nn.relu(g_4)
         print ('G4: ', g_4)
-        
+
         g_5 = tf.nn.conv3d_transpose(g_4, weights['wg5'], (batch_size,64,64,64,1), strides=strides, padding="SAME")
         # g_5 = tf.nn.bias_add(g_5, biases['bg5'])
         # g_5 = tf.nn.sigmoid(g_5)
         g_5 = tf.nn.tanh(g_5)
         print ('G5: ', g_5)
-    
+
     return g_5
 
 
@@ -100,7 +100,7 @@ def discriminator(inputs, phase_train=True, reuse=False):
     with tf.variable_scope("dis", reuse=reuse):
         d_1 = tf.nn.conv3d(inputs, weights['wd1'], strides=strides, padding="SAME")
         # d_1 = tf.nn.bias_add(d_1, biases['bd1'])
-        # d_1 = tf.layers.batch_normalization(d_1, training=phase_train, epsilon=1e-4, momentum=0.9)                               
+        # d_1 = tf.layers.batch_normalization(d_1, training=phase_train, epsilon=1e-4, momentum=0.9)
         d_1 = lrelu(d_1, leak_value)
         print ('D1: ', d_1)
 
@@ -109,7 +109,7 @@ def discriminator(inputs, phase_train=True, reuse=False):
         d_2 = tf.layers.batch_normalization(d_2, training=phase_train, epsilon=1e-4, momentum=0.9)
         d_2 = lrelu(d_2, leak_value)
         print ('D2: ', d_2)
-        
+
         d_3 = tf.nn.conv3d(d_2, weights['wd3'], strides=strides, padding="SAME")  
         # d_3 = tf.nn.bias_add(d_3, biases['bd3'])
         d_3 = tf.layers.batch_normalization(d_3, training=phase_train, epsilon=1e-4, momentum=0.9)
@@ -123,7 +123,7 @@ def discriminator(inputs, phase_train=True, reuse=False):
         print ('D4: ', d_4)
 
 
-        d_5 = tf.nn.conv3d(d_4, weights['wd5'], strides=[1,1,1,1,1], padding="VALID")     
+        d_5 = tf.nn.conv3d(d_4, weights['wd5'], strides=[1,1,1,1,1], padding="VALID")
         d_5_no_sigmoid = d_5
         d_5 = tf.nn.sigmoid(d_5)
         print ('D5: ', d_5)
@@ -156,19 +156,19 @@ def initializeWeights():
     weights['wg2'] = tf.get_variable("wg2", shape=[4, 4, 4, 256, 512], initializer=xavier_init)
     weights['wg3'] = tf.get_variable("wg3", shape=[4, 4, 4, 128, 256], initializer=xavier_init)
     weights['wg4'] = tf.get_variable("wg4", shape=[4, 4, 4, 64, 128], initializer=xavier_init)
-    weights['wg5'] = tf.get_variable("wg5", shape=[4, 4, 4, 1, 64], initializer=xavier_init)    
+    weights['wg5'] = tf.get_variable("wg5", shape=[4, 4, 4, 1, 64], initializer=xavier_init)
 
     weights['wd1'] = tf.get_variable("wd1", shape=[4, 4, 4, 1, 64], initializer=xavier_init)
     weights['wd2'] = tf.get_variable("wd2", shape=[4, 4, 4, 64, 128], initializer=xavier_init)
     weights['wd3'] = tf.get_variable("wd3", shape=[4, 4, 4, 128, 256], initializer=xavier_init)
-    weights['wd4'] = tf.get_variable("wd4", shape=[4, 4, 4, 256, 512], initializer=xavier_init)    
-    weights['wd5'] = tf.get_variable("wd5", shape=[4, 4, 4, 512, 1], initializer=xavier_init)    
+    weights['wd4'] = tf.get_variable("wd4", shape=[4, 4, 4, 256, 512], initializer=xavier_init)
+    weights['wd5'] = tf.get_variable("wd5", shape=[4, 4, 4, 512, 1], initializer=xavier_init)
 
     return weights
 
 # ---
 def initialiseBiases():
-    
+
     global biases
     zero_init = tf.zeros_initializer()
 
@@ -181,8 +181,8 @@ def initialiseBiases():
     biases['bd1'] = tf.get_variable("bd1", shape=[64], initializer=zero_init)
     biases['bd2'] = tf.get_variable("bd2", shape=[128], initializer=zero_init)
     biases['bd3'] = tf.get_variable("bd3", shape=[256], initializer=zero_init)
-    biases['bd4'] = tf.get_variable("bd4", shape=[512], initializer=zero_init)    
-    biases['bd5'] = tf.get_variable("bd5", shape=[1], initializer=zero_init) 
+    biases['bd4'] = tf.get_variable("bd4", shape=[512], initializer=zero_init)
+    biases['bd5'] = tf.get_variable("bd5", shape=[1], initializer=zero_init)
 
     return biases
 # --- ]
@@ -194,7 +194,7 @@ def trainGAN(is_dummy=False, checkpoint=None, name=model_name):
     global_step = tf.get_variable('global_step', shape=[], initializer=tf.zeros_initializer(), dtype=tf.int32)
 
     z_vector = tf.placeholder(shape=[batch_size,z_size],dtype=tf.float32) 
-    x_vector = tf.placeholder(shape=[batch_size,cube_len,cube_len,cube_len,cube_channel],dtype=tf.float32) 
+    x_vector = tf.placeholder(shape=[batch_size,cube_len,cube_len,cube_len,cube_channel],dtype=tf.float32)
 
     net_g_train = generator(z_vector, phase_train=True, reuse=False) 
     net_g_test  = generator(z_vector, phase_train=False, reuse=True)
@@ -285,12 +285,12 @@ def trainGAN(is_dummy=False, checkpoint=None, name=model_name):
     config = tf.ConfigProto()
     config.gpu_options.allow_growth=True
 
-    with tf.Session(config=config) as sess:  
-      
-        sess.run(tf.global_variables_initializer())        
+    with tf.Session(config=config) as sess:
+
+        sess.run(tf.global_variables_initializer())
 
         if checkpoint is not None:
-            saver.restore(sess, checkpoint) 
+            saver.restore(sess, checkpoint)
             epoch = sess.run(global_step)
             sess.run(tf.assign(global_step, epoch + 1))
 
@@ -310,7 +310,7 @@ def trainGAN(is_dummy=False, checkpoint=None, name=model_name):
         z_val = np.random.normal(0, 0.33, size=[batch_size, z_size]).astype(np.float32)
 
         for epoch in range(sess.run(global_step), n_epochs):
-            
+
             idx = np.random.randint(len(volumes), size=batch_size)
             x = volumes[idx]
             z = np.random.normal(0, 0.33, size=[batch_size, z_size]).astype(np.float32)
@@ -347,15 +347,15 @@ def trainGAN(is_dummy=False, checkpoint=None, name=model_name):
                 # --- [ in Python2, dump as a pickle file. Loading this file by `np.load(filename, encoding='latin1')` in Python3 ] ---
                 g_objects.dump(os.path.join(train_sample_directory, '{}_{}.pkl'.format(model_name, epoch)))
                 # ---------------------------------------------------------------------------------------------------------------------
-                # id_ch = np.random.randint(0, batch_size, 4)
-                # for i in range(4):
-                    # if g_objects[id_ch[i]].max() > 0.5:
-                        # d.plotMeshFromVoxels(np.squeeze(g_objects[id_ch[i]]>0.5), threshold=0.5)
+                id_ch = np.random.randint(0, batch_size, 4)
+                for i in range(4):
+                    if g_objects[id_ch[i]].max() > 0.5:
+                        d.plotMeshFromVoxels(np.squeeze(g_objects[id_ch[i]]>0.5), threshold=0.5)
 
             # store checkpoint
             if epoch % 1000 == 0:
                 if not os.path.exists(model_directory):
-                    os.makedirs(model_directory)      
+                    os.makedirs(model_directory)
                 saver.save(sess, save_path = os.path.join(model_directory, '{}.ckpt'.format(model_name)), global_step=global_step)
 
             # writer.add_summary(summary_d, epoch)
@@ -371,10 +371,10 @@ def testGAN(trained_model_path=None, n_batches=40):
     z_vector = tf.placeholder(shape=[batch_size,z_size],dtype=tf.float32) 
     net_g_test = generator(z_vector, phase_train=True, reuse=True)
 
-    vis = visdom.Visdom()
+    # vis = visdom.Visdom()
 
     saver = tf.train.Saver()
-    
+
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         saver.restore(sess, trained_model_path) 
