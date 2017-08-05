@@ -1,0 +1,5 @@
+*.pyc
+
+models/
+train_sample/
+summary/
