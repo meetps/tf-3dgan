@@ -1,0 +1,7 @@
+*.pyc
+*.swp
+*.swo
+
+models/
+train_sample/
+summary/

@@ -182,7 +182,7 @@ def trainGAN():
                 sess.run([optimizer_op_d],feed_dict={z_vector:z, x_vector:x})
                 sess.run([optimizer_op_g],feed_dict={z_vector:z})
                             
-            print "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss
+            print ("epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss)
 
             # output generated chairs
             if epoch % 500 == 10:

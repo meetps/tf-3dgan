@@ -11,13 +11,13 @@ from mpl_toolkits import mplot3d
 
 try:
     import trimesh
-    from stl import mesh
+    from stl import mesh    #pip install numpy-stl
 except:
     pass
-    print 'All dependencies not loaded, some functionality may not work'
+    print ('All dependencies not loaded, some functionality may not work')
 
-LOCAL_PATH = '/home/meetshah1995/datasets/ModelNet/3DShapeNets/volumetric_data/'
-SERVER_PATH = '/home/gpu_users/meetshah/3dgan/volumetric_data/'
+LOCAL_PATH  = '/home/bass/DATA/ModelNet/3DShapeNets/volumetric_data/'
+SERVER_PATH = '/home/bass/DATA/ModelNet/3DShapeNets/volumetric_data/'
 
 def getVF(path):
     raw_data = tuple(open(path, 'r'))
@@ -48,11 +48,11 @@ def plotFromVoxels(voxels):
     plt.show()
 
 def getVFByMarchingCubes(voxels, threshold=0.5):
-    v, f =  sk.marching_cubes(voxels, level=threshold)
+    v, f = sk.marching_cubes_classic(voxels, level=threshold)
     return v, f
 
 def plotMeshFromVoxels(voxels, threshold=0.5):
-    v,f = getVFByMarchingCubes(voxels, threshold)
+    v, f = getVFByMarchingCubes(voxels, threshold)
     plotFromVF(v,f)
 
 def plotVoxelVisdom(voxels, visdom, title):
@@ -77,10 +77,10 @@ def getVolumeFromOFF(path, sideLen=32):
     return volume.astype(np.bool)
 
 def getVoxelFromMat(path, cube_len=64):
-    voxels = io.loadmat(path)['instance']
-    voxels = np.pad(voxels,(1,1),'constant',constant_values=(0,0))
+    voxels = io.loadmat(path)['instance']   #shape=[30,30,30]
+    voxels = np.pad(voxels, (1,1), 'constant', constant_values=(0,0)) # np.pad: Extend the edge.
     if cube_len != 32 and cube_len == 64:
-        voxels = nd.zoom(voxels, (2,2,2), mode='constant', order=0)
+        voxels = nd.zoom(voxels, (2,2,2), mode='constant', order=0)   # scale up
     return voxels
 
 def getAll(obj='airplane',train=True, is_local=False, cube_len=64, obj_ratio=1.0):
@@ -90,7 +90,7 @@ def getAll(obj='airplane',train=True, is_local=False, cube_len=64, obj_ratio=1.0
     objPath += 'train/' if train else 'test/'
     fileList = [f for f in os.listdir(objPath) if f.endswith('.mat')]
     fileList = fileList[0:int(obj_ratio*len(fileList))]
-    volumeBatch = np.asarray([getVoxelFromMat(objPath + f, cube_len) for f in fileList],dtype=np.bool)
+    volumeBatch = np.asarray([getVoxelFromMat(os.path.join(objPath, f), cube_len) for f in fileList], dtype=np.bool)    #shape=[10668,30,30,30]
     return volumeBatch
 
 
