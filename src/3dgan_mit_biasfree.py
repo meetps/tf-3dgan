@@ -175,7 +175,6 @@ def trainGAN(is_dummy=False, checkpoint=None):
         sess.run(tf.global_variables_initializer())        
         if checkpoint is not None:
             saver.restore(sess, checkpoint)        
-
         if is_dummy:
             volumes = np.random.randint(0,2,(batch_size,cube_len,cube_len,cube_len))
             print 'Using Dummy Data'
@@ -234,7 +233,7 @@ def testGAN(trained_model_path=None, n_batches=40):
 
     weights = initialiseWeights()
 
-    z_vector = tf.placeholder(shape=[batch_size,z_size],dtype=tf.float32) 
+    z_vector = tf.placeholder(shape=[batch_size,z_size],dtype=tf.float32)
     net_g_test = generator(z_vector, phase_train=True, reuse=True)
 
     vis = visdom.Visdom()

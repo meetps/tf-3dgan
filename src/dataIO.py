@@ -16,8 +16,9 @@ except:
     pass
     print 'All dependencies not loaded, some functionality may not work'
 
-LOCAL_PATH = '/home/meetshah1995/datasets/ModelNet/3DShapeNets/volumetric_data/'
-SERVER_PATH = '/home/gpu_users/meetshah/3dgan/volumetric_data/'
+import os
+LOCAL_PATH = os.path.dirname(os.path.realpath(__file__)) + '/data/3DShapeNets/volumetric_data/'
+SERVER_PATH = os.path.dirname(os.path.realpath(__file__)) + '/data/3DShapeNets/volumetric_data/'
 
 def getVF(path):
     raw_data = tuple(open(path, 'r'))
@@ -48,7 +49,7 @@ def plotFromVoxels(voxels):
     plt.show()
 
 def getVFByMarchingCubes(voxels, threshold=0.5):
-    v, f =  sk.marching_cubes(voxels, level=threshold)
+    v, f =  sk.marching_cubes_classic(voxels, level=threshold)
     return v, f
 
 def plotMeshFromVoxels(voxels, threshold=0.5):
