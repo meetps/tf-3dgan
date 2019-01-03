@@ -16,8 +16,8 @@ except:
     pass
     print 'All dependencies not loaded, some functionality may not work'
 
-LOCAL_PATH = './src/3DShapeNets/volumetric_data/'
-SERVER_PATH = './src/3DShapeNets/volumetric_data/'
+LOCAL_PATH = './3DShapeNets/volumetric_data/'
+SERVER_PATH = './3DShapeNets/volumetric_data/'
 
 def getVF(path):
     raw_data = tuple(open(path, 'r'))
