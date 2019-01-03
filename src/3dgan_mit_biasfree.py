@@ -10,9 +10,6 @@ import dataIO as d
 from tqdm import *
 from utils import *
 
-import pdb
-
-
 '''
 Global Parameters
 '''
@@ -178,7 +175,6 @@ def trainGAN(is_dummy=False, checkpoint=None):
         sess.run(tf.global_variables_initializer())        
         if checkpoint is not None:
             saver.restore(sess, checkpoint)        
-        pdb.set_trace()
         if is_dummy:
             volumes = np.random.randint(0,2,(batch_size,cube_len,cube_len,cube_len))
             print 'Using Dummy Data'
@@ -188,7 +184,7 @@ def trainGAN(is_dummy=False, checkpoint=None):
         volumes = volumes[...,np.newaxis].astype(np.float)
         # volumes *= 2.0
         # volumes -= 1.0
-        pdb.set_trace()
+
         for epoch in range(n_epochs):
             
             idx = np.random.randint(len(volumes), size=batch_size)
