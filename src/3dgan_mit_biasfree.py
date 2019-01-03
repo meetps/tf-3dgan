@@ -10,6 +10,7 @@ import dataIO as d
 from tqdm import *
 from utils import *
 
+
 '''
 Global Parameters
 '''
@@ -35,6 +36,7 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
 
     strides    = [1,2,2,2,1]
 
+    # Set reuse equal to None
     with tf.variable_scope("gen", reuse=reuse):
         z = tf.reshape(z, (batch_size, 1, 1, 1, z_size))
         g_1 = tf.nn.conv3d_transpose(z, weights['wg1'], (batch_size,4,4,4,512), strides=[1,1,1,1,1], padding="VALID")
@@ -215,7 +217,7 @@ def trainGAN(is_dummy=False, checkpoint=None):
             print 'Generator Training ', "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss, "d_acc: ", d_accuracy
 
             # output generated chairs
-            if epoch % 200 == 0:
+            if epoch % 5 == 0:
                 g_objects = sess.run(net_g_test,feed_dict={z_vector:z_sample})
                 if not os.path.exists(train_sample_directory):
                     os.makedirs(train_sample_directory)
@@ -234,7 +236,7 @@ def testGAN(trained_model_path=None, n_batches=40):
 
     weights = initialiseWeights()
 
-    z_vector = tf.placeholder(shape=[batch_size,z_size],dtype=tf.float32) 
+    z_vector = tf.placeholder(shape=[batch_size,z_size],dtype=tf.float32)
     net_g_test = generator(z_vector, phase_train=True, reuse=True)
 
     vis = visdom.Visdom()
