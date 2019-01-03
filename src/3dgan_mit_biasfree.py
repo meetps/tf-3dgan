@@ -36,7 +36,6 @@ def generator(z, batch_size=batch_size, phase_train=True, reuse=False):
 
     strides    = [1,2,2,2,1]
 
-    # Set reuse equal to None
     with tf.variable_scope("gen", reuse=reuse):
         z = tf.reshape(z, (batch_size, 1, 1, 1, z_size))
         g_1 = tf.nn.conv3d_transpose(z, weights['wg1'], (batch_size,4,4,4,512), strides=[1,1,1,1,1], padding="VALID")
@@ -217,7 +216,7 @@ def trainGAN(is_dummy=False, checkpoint=None):
             print 'Generator Training ', "epoch: ",epoch,', d_loss:',discriminator_loss,'g_loss:',generator_loss, "d_acc: ", d_accuracy
 
             # output generated chairs
-            if epoch % 5 == 0:
+            if epoch % 200 == 0:
                 g_objects = sess.run(net_g_test,feed_dict={z_vector:z_sample})
                 if not os.path.exists(train_sample_directory):
                     os.makedirs(train_sample_directory)
