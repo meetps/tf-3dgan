@@ -17,8 +17,8 @@ except:
     print 'All dependencies not loaded, some functionality may not work'
 
 import os
-LOCAL_PATH = os.getcwd() + '/src/3DShapeNets/volumetric_data/'
-SERVER_PATH = os.getcwd() + '/src/3DShapeNets/volumetric_data/'
+LOCAL_PATH = os.path.dirname(os.path.realpath(__file__)) + '/data/3DShapeNets/volumetric_data/'
+SERVER_PATH = os.path.dirname(os.path.realpath(__file__)) + '/data/3DShapeNets/volumetric_data/'
 
 def getVF(path):
     raw_data = tuple(open(path, 'r'))
